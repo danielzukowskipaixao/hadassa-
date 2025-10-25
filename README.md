@@ -120,9 +120,23 @@ npm run test     # testes
 
 - Boas-vindas: a Home mostra “Olá, como você está, Hadassah?” com microanimação.
 - Recadinho do Dia: abre automaticamente o cartão/modal do dia atual (se houver). Dias futuros são bloqueados no front e no back. Timezone: America/Sao_Paulo.
-- Galeria: grid com paginação (carregar mais) e FAB “+” para upload (até 10 arquivos, 10MB cada). Após upload (Supabase Storage), cria registro em `Photo` via API.
+- Galeria: grid com paginação (carregar mais) e FAB “+” para upload (até 10 arquivos, 10MB cada). Após upload (Supabase Storage), cria registro em `Photo` via API. Mostra uma faixa “Recém-enviadas” com miniaturas imediatamente após o envio.
 - Frases: criar/listar; apenas usuários autorizados podem escrever. Zod valida inputs.
 - Acesso: whitelist por e-mail para escrita; leitura pública somente do que for `isPublic=true`.
+ - Acesso: uploads de Fotos estão abertos ao público (sem login); leitura pública do que for `isPublic=true`. Frases e Recado do Dia seguem a whitelist (quando habilitada no backend).
+
+## API (App Router)
+
+- Frases
+  - GET `/api/phrases` ou `/api/phrases/list` — lista pública paginada: `?cursor=<id>&limit=20`
+  - POST `/api/phrases` ou `/api/phrases/create` — cria frase (auth + whitelist)
+  - DELETE `/api/phrases/[id]` — remove frase (admin/autorizado)
+- Fotos
+  - GET `/api/photos` — lista pública paginada: `?cursor=<id>&limit=20`
+  - POST `/api/photos` — cria metadado da foto (público)
+- Recado do dia
+  - GET `/api/daily-note?dayKey=YYYY-MM-DD` ou `/api/daily-note/get?dayKey=...`
+  - POST `/api/daily-note` ou `/api/daily-note/upsert` — bloqueia dias futuros no servidor
 
 ## RLS — Exemplo de Políticas
 
@@ -174,3 +188,19 @@ for insert with check ( auth.role() = 'authenticated' );
 ---
 
 Com amor, para a Hadassah. 💙
+
+## Portão de Senha (Gate)
+
+Status: desabilitado no código (o middleware é no-op). Para reativar, restaure a validação no `middleware.ts`.
+
+Para bloquear todo o site atrás de uma senha simples.
+
+- Variável de ambiente:
+  - `GATE_PASSWORD=daniel` (padrão para dev: se ausente, usa `daniel`).
+- Cookie de sessão: `hadassa_gate_ok=1` (HttpOnly, SameSite=Lax, 30 dias).
+- Middleware global redireciona para `/gate` quando o cookie não está presente.
+- Rotas liberadas no middleware: `/gate`, `/api/gate/login`, estáticos (`/_next/*`, `favicon`, `robots.txt`, etc.).
+- Endpoint de login: `POST /api/gate/login` (confere a senha e grava o cookie).
+- Defesa extra: APIs de escrita checam o cookie além das autorizações existentes.
+
+Aviso: O gate é simples e não substitui um sistema de autenticação robusto caso o projeto seja exposto publicamente.

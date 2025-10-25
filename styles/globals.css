@@ -10,7 +10,6 @@ html, body{
 }
 body{
   background: radial-gradient(1200px 800px at 10% -10%, #0b3a40 0%, var(--bg) 50%, #0a1f1f 100%);
-  color: theme(colors.foreground);
 }
 
 /***** Floral SVG background (subtle) *****/
@@ -40,7 +39,13 @@ body{
   filter: blur(1px) saturate(110%);
 }
 
-.glass { @apply bg-white/15 border border-white/30 backdrop-blur-xl rounded-2xl shadow-glass; }
+.glass {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(24px);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
 
 /* Focus styles */
 *:focus { outline: 2px solid #a6d4ff; outline-offset: 2px; }

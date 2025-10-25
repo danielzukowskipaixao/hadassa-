@@ -1,20 +1,29 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClientServer } from '@/lib/supabase-server'
 
-const PROTECTED_PREFIXES = ['/admin']
+// Simple site-wide password gate using a cookie.
+const GATE_COOKIE = 'hadassa_gate_ok'
+
+function isPublicPath(pathname: string) {
+  if (
+    pathname === '/gate' ||
+    pathname === '/api/gate/login' ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/favicon') ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/public/')
+  ) return true
+  return false
+}
 
 export async function middleware(req: NextRequest) {
-  const url = new URL(req.url)
-  if (PROTECTED_PREFIXES.some((p) => url.pathname.startsWith(p))) {
-    const supabase = createClientServer()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-  }
+  // Gate disabled: allow all requests without restriction
   return NextResponse.next()
 }
 
+// Apply to the entire site
 export const config = {
-  matcher: ['/admin/:path*']
+  // Keep matcher but middleware is a no-op now
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
 }

@@ -19,10 +19,15 @@ export default function LoginPage() {
     if (!parsed.success) { setMessage('E-mail inválido'); setStatus('error'); return }
 
     setStatus('loading')
-  const supabase = supabaseRef.current ?? createClientBrowser()
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/` } })
-    if (error) { setMessage(error.message); setStatus('error') }
-    else { setMessage('Enviamos um link mágico para seu e-mail.'); setStatus('sent') }
+    try {
+      const supabase = supabaseRef.current ?? createClientBrowser()
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/` } })
+      if (error) { setMessage(error.message); setStatus('error') }
+      else { setMessage('Enviamos um link mágico para seu e-mail.'); setStatus('sent') }
+    } catch (err: any) {
+      setMessage(err?.message || 'Configure o Supabase em .env.local');
+      setStatus('error')
+    }
   }
 
   return (

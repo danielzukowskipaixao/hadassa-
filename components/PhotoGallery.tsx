@@ -6,6 +6,7 @@ import { createClientBrowser } from '@/lib/supabase-browser'
 
 export function PhotoGallery() {
   const [photos, setPhotos] = useState<any[]>([])
+  const [recent, setRecent] = useState<any[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const supabaseRef = useRef<ReturnType<typeof createClientBrowser> | null>(null)
@@ -17,13 +18,19 @@ export function PhotoGallery() {
     setLoading(true)
     const params = new URLSearchParams()
     if (cursor) params.set('cursor', cursor)
-    const res = await fetch(`/api/photos?${params.toString()}`)
-    const json = await res.json()
-    setPhotos(prev => [...prev, ...json.items])
-    setCursor(json.nextCursor)
+    try {
+      const res = await fetch(`/api/photos?${params.toString()}`)
+      if (!res.ok) { setLoading(false); return }
+      const json = await res.json()
+      setPhotos(prev => [...prev, ...json.items])
+      setCursor(json.nextCursor)
+    } catch {
+      // ignore errors and keep UI responsive
+    }
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadMore() }, [])
 
   function openFilePicker() { inputRef.current?.click() }
@@ -34,11 +41,24 @@ export function PhotoGallery() {
     for (const file of list) {
       if (file.size > 10 * 1024 * 1024) { alert(`Arquivo muito grande: ${file.name}`); continue }
       const path = `${Date.now()}-${file.name}`.replace(/\s+/g, '_')
-  const supabase = supabaseRef.current ?? createClientBrowser()
-  const { data, error } = await supabase.storage.from('photos').upload(path, file, { upsert: false })
-      if (error) { console.error(error); alert(error.message); continue }
-      const { data: pub } = supabase.storage.from('photos').getPublicUrl(path)
-      await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ url: pub.publicUrl, isPublic: true }) })
+      try {
+        const supabase = supabaseRef.current ?? createClientBrowser()
+        const { data, error } = await supabase.storage.from('photos').upload(path, file, { upsert: false })
+        if (error) { console.error(error); alert(error.message); continue }
+        const { data: pub } = supabase.storage.from('photos').getPublicUrl(path)
+        // Optimistically show in "Recém-enviadas"
+        const temp = { id: `tmp-${Date.now()}`, url: pub.publicUrl, thumbUrl: pub.publicUrl }
+        setRecent((r) => [temp, ...r].slice(0, 12))
+
+        const resp = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ url: pub.publicUrl, isPublic: true }) })
+        if (!resp.ok) {
+          // Keep the recent preview but inform the user that persistence failed
+          console.warn('Falha ao salvar metadados da foto (POST /api/photos)')
+        }
+      } catch (err: any) {
+        alert(err?.message || 'Configure o Supabase (.env.local) para enviar fotos.')
+        break
+      }
       setPhotos([]); setCursor(null); loadMore()
     }
   }
@@ -54,6 +74,19 @@ export function PhotoGallery() {
           </button>
           <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e)=> onFilesSelected(e.target.files)} />
         </div>
+
+        {recent.length > 0 && (
+          <div className="mt-4">
+            <div className="text-sm opacity-80 mb-2">Recém-enviadas</div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {recent.map((p) => (
+                <div key={p.id} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-white/20">
+                  <Image src={p.thumbUrl || p.url} alt={p.caption || 'Foto'} fill className="object-cover" sizes="96px" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {photos.map((p) => (

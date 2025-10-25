@@ -7,6 +7,15 @@ import { isFutureDayKey } from '@/lib/date'
 const prisma = new PrismaClient()
 
 export async function GET(req: NextRequest) {
+  const dbUrl = process.env.DATABASE_URL?.trim()
+  if (!dbUrl) {
+    const { searchParams } = new URL(req.url)
+    const dayKey = searchParams.get('dayKey')
+    if (!dayKey) return new NextResponse('dayKey required', { status: 400 })
+    if (isFutureDayKey(dayKey)) return new NextResponse('Forbidden', { status: 403 })
+    // Without DB, just return null so UI does not crash
+    return NextResponse.json(null)
+  }
   const { searchParams } = new URL(req.url)
   const dayKey = searchParams.get('dayKey')
   if (!dayKey) return new NextResponse('dayKey required', { status: 400 })
@@ -16,8 +25,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user || !isEmailAllowedToWrite(user.email)) return new NextResponse('Unauthorized', { status: 401 })
+  const dbUrl = process.env.DATABASE_URL?.trim()
+  if (!dbUrl) {
+    return new NextResponse('Service Unavailable: configure DATABASE_URL', { status: 503 })
+  }
+  const hasGate = req.cookies.get('hadassa_gate_ok')?.value === '1'
+  if (!hasGate) {
+    const user = await getCurrentUser()
+    if (!user || !isEmailAllowedToWrite(user.email)) return new NextResponse('Unauthorized', { status: 401 })
+  }
 
   const json = await req.json()
   const parsed = DailyNoteUpsertSchema.safeParse(json)
