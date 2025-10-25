@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { createClientBrowser } from '@/lib/supabase-browser'
 
 type Phrase = {
   id: string
@@ -11,20 +12,25 @@ type Phrase = {
 
 export function PhrasesList() {
   const [items, setItems] = useState<Phrase[]>([])
-  const [cursor, setCursor] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
+  const supabase = createClientBrowser()
 
   async function loadMore() {
     if (loading) return
     setLoading(true)
-    const params = new URLSearchParams()
-    if (cursor) params.set('cursor', cursor)
     try {
-      const res = await fetch(`/api/phrases/list?${params.toString()}`)
-      if (!res.ok) { setLoading(false); return }
-      const json = await res.json()
-      setItems((prev) => [...prev, ...json.items])
-      setCursor(json.nextCursor)
+      const pageSize = 20
+      const from = page * pageSize
+      const to = from + pageSize - 1
+      const { data, error } = await supabase
+        .from('Phrase')
+        .select('*')
+        .order('createdAt', { ascending: false })
+        .range(from, to)
+      if (error) throw error
+      setItems((prev) => [...prev, ...(data || [])])
+      setPage((p) => p + 1)
     } catch {
       // network or JSON error — keep calm and carry on
     }
@@ -55,11 +61,8 @@ export function PhrasesList() {
   async function onDelete(id: string) {
     const prev = items
     setItems((cur) => cur.filter((p) => p.id !== id))
-    const res = await fetch(`/api/phrases/${id}`, { method: 'DELETE' })
-    if (!res.ok) {
-      setItems(prev)
-      alert(res.status === 401 ? 'Sem permissão para excluir.' : 'Erro ao excluir.')
-    }
+    const { error } = await supabase.from('Phrase').delete().eq('id', id)
+    if (error) { setItems(prev); alert('Erro ao excluir.') }
   }
 
   return (
@@ -76,7 +79,7 @@ export function PhrasesList() {
         ))}
       </ul>
 
-      {cursor && (
+      {true && (
         <div className="mt-4 grid place-items-center">
           <button onClick={loadMore} className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15">
             {loading ? 'Carregando…' : 'Carregar mais'}

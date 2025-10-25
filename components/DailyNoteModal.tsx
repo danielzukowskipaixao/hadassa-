@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Dialog } from './ui/dialog'
 import { todayKey } from '@/lib/date'
+import { createClientBrowser } from '@/lib/supabase-browser'
 
 export function DailyNoteModal({ open, onClose, dayKey, onSaved }: {
   open: boolean
@@ -17,27 +18,27 @@ export function DailyNoteModal({ open, onClose, dayKey, onSaved }: {
     if (!open) return
     setLoading(true)
     setError(null)
-    fetch(`/api/daily-note/get?dayKey=${dayKey}`).then(async (r) => {
-      if (!r.ok) return null
-      return r.json()
-    }).then((json) => {
-      setContent(json?.content ?? '')
-    }).finally(() => setLoading(false))
+    const supabase = createClientBrowser()
+    supabase
+      .from('DailyNote')
+      .select('*')
+      .eq('dayKey', dayKey)
+      .maybeSingle()
+      .then((res: any) => {
+        setContent(res?.data?.content ?? '')
+      })
+      .finally(() => setLoading(false))
   }, [open, dayKey])
 
   async function save() {
     setLoading(true)
     setError(null)
-    const res = await fetch('/api/daily-note/upsert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayKey, content, isPublic: true })
-    })
+    const supabase = createClientBrowser()
+    const { error } = await supabase
+      .from('DailyNote')
+      .upsert({ dayKey, content, isPublic: true })
     setLoading(false)
-    if (!res.ok) {
-      setError('Erro ao salvar. Tente novamente.')
-      return
-    }
+    if (error) { setError('Erro ao salvar. Tente novamente.'); return }
     onSaved?.()
     onClose()
   }

@@ -2,6 +2,8 @@
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { createClientBrowser } from '@/lib/supabase-browser'
+import { ensurePublicUserId } from '@/lib/publicUser'
 
 const Schema = z.object({
   text: z.string().min(1, 'Escreva algo').max(500, 'Máximo 500 caracteres'),
@@ -23,18 +25,20 @@ export function PhrasesForm() {
     }
     window.dispatchEvent(new CustomEvent('phrase:created', { detail: tmp }))
     reset({ text: '' })
-    const res = await fetch('/api/phrases/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: values.text, isPublic: true })
-    })
-    if (!res.ok) {
+    const supabase = createClientBrowser()
+    try {
+      const userId = await ensurePublicUserId(supabase)
+      const { data, error } = await supabase
+        .from('Phrase')
+        .insert({ text: values.text, isPublic: true, userId })
+        .select()
+        .single()
+      if (error) throw error
+      window.dispatchEvent(new CustomEvent('phrase:replace', { detail: { tempId: tmp.id, real: data } }))
+    } catch (err: any) {
       window.dispatchEvent(new CustomEvent('phrase:revert', { detail: tmp.id }))
-      alert(res.status === 401 ? 'Você precisa estar logado e autorizado.' : 'Erro ao salvar. Tente novamente.')
-      return
+      alert(err?.message || 'Erro ao salvar. Tente novamente.')
     }
-    const created = await res.json()
-    window.dispatchEvent(new CustomEvent('phrase:replace', { detail: { tempId: tmp.id, real: created } }))
   }
 
   return (

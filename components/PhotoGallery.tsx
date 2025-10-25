@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Plus } from 'lucide-react'
 import { createClientBrowser } from '@/lib/supabase-browser'
+import { ensurePublicUserId } from '@/lib/publicUser'
 
 export function PhotoGallery() {
   const [photos, setPhotos] = useState<any[]>([])
   const [recent, setRecent] = useState<any[]>([])
-  const [cursor, setCursor] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
   const supabaseRef = useRef<ReturnType<typeof createClientBrowser> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -16,14 +17,19 @@ export function PhotoGallery() {
   async function loadMore() {
     if (loading) return
     setLoading(true)
-    const params = new URLSearchParams()
-    if (cursor) params.set('cursor', cursor)
     try {
-      const res = await fetch(`/api/photos?${params.toString()}`)
-      if (!res.ok) { setLoading(false); return }
-      const json = await res.json()
-      setPhotos(prev => [...prev, ...json.items])
-      setCursor(json.nextCursor)
+      const supabase = supabaseRef.current ?? createClientBrowser()
+      const pageSize = 20
+      const from = page * pageSize
+      const to = from + pageSize - 1
+      const { data, error } = await supabase
+        .from('Photo')
+        .select('*')
+        .order('createdAt', { ascending: false })
+        .range(from, to)
+      if (error) throw error
+      setPhotos(prev => [...prev, ...(data || [])])
+      setPage(p => p + 1)
     } catch {
       // ignore errors and keep UI responsive
     }
@@ -50,16 +56,18 @@ export function PhotoGallery() {
         const temp = { id: `tmp-${Date.now()}`, url: pub.publicUrl, thumbUrl: pub.publicUrl }
         setRecent((r) => [temp, ...r].slice(0, 12))
 
-        const resp = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ url: pub.publicUrl, isPublic: true }) })
-        if (!resp.ok) {
-          // Keep the recent preview but inform the user that persistence failed
-          console.warn('Falha ao salvar metadados da foto (POST /api/photos)')
-        }
+        // Ensure a Public User exists and persist photo metadata directly via Supabase
+        const userId = await ensurePublicUserId(supabase)
+        const { error: insertErr } = await supabase
+          .from('Photo')
+          .insert({ url: pub.publicUrl, thumbUrl: pub.publicUrl, isPublic: true, userId })
+        if (insertErr) console.warn('Falha ao salvar metadados da foto:', insertErr.message)
       } catch (err: any) {
         alert(err?.message || 'Configure o Supabase (.env.local) para enviar fotos.')
         break
       }
-      setPhotos([]); setCursor(null); loadMore()
+      // reload list to include the newly uploaded photo in the main grid
+      setPhotos([]); setPage(0); await loadMore()
     }
   }
 
@@ -96,7 +104,7 @@ export function PhotoGallery() {
           ))}
         </div>
 
-        {cursor && (
+        {true && (
           <div className="mt-4 grid place-items-center">
             <button onClick={loadMore} className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/15">
               {loading ? 'Carregando…' : 'Carregar mais'}

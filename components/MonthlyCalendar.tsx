@@ -13,6 +13,7 @@ import {
 import { todayKey, keyFor } from '@/lib/date'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { DailyNoteModal } from './DailyNoteModal'
+import { createClientBrowser } from '@/lib/supabase-browser'
 
 function toDayKey(d: Date) {
   return keyFor(d)
@@ -45,14 +46,16 @@ export function MonthlyCalendar() {
     if (autoOpenChecked) return
     setAutoOpenChecked(true)
     const dk = today
-    fetch(`/api/daily-note/get?dayKey=${dk}`).then(async (r) => {
-      if (r.ok) {
-        const json = await r.json()
-        if (json && (json.title || json.content)) {
-          setSelectedDayKey(dk)
-        }
-      }
-    })
+    const supabase = createClientBrowser()
+    supabase
+      .from('DailyNote')
+      .select('title,content')
+      .eq('dayKey', dk)
+      .maybeSingle()
+      .then((res: any) => {
+        const data = res?.data as { title?: string | null; content?: string | null } | null
+        if (data && (data.title || data.content)) setSelectedDayKey(dk)
+      })
   }, [autoOpenChecked, today])
 
   return (
