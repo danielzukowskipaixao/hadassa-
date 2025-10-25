@@ -10,8 +10,8 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
-import { todayKey, keyFor, isFutureDayKey } from '@/lib/date'
-import { ChevronLeft, ChevronRight, Lock } from 'lucide-react'
+import { todayKey, keyFor } from '@/lib/date'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { DailyNoteModal } from './DailyNoteModal'
 
 function toDayKey(d: Date) {
@@ -88,24 +88,23 @@ export function MonthlyCalendar() {
           const dk = toDayKey(d)
           const isOut = !isSameMonth(d, currentMonth)
           const isToday = dk === today
-          const future = isFutureDayKey(dk)
+          const future = false
           return (
             <button
               key={dk}
-              onClick={() => { if (!future) setSelectedDayKey(dk) }}
-              disabled={future}
-              aria-disabled={future}
+              onClick={() => { setSelectedDayKey(dk) }}
+              disabled={false}
+              aria-disabled={false}
               aria-current={isToday ? 'date' : undefined}
-              title={future ? 'Dia futuro bloqueado' : dk}
+              title={dk}
               className={
                 `relative aspect-square rounded-xl border border-white/20 text-sm ` +
                 `${isOut ? 'opacity-40' : ''} ` +
-                `${future ? 'cursor-not-allowed' : 'hover:bg-white/10'} ` +
+                `hover:bg-white/10 ` +
                 `${isToday ? 'bg-pop/20' : 'bg-white/5'}`
               }
             >
               <div className="absolute top-1 left-1 text-xs">{format(d, 'd')}</div>
-              {future && <Lock className="absolute bottom-1 right-1 h-3 w-3 opacity-70" />}
             </button>
           )
         })}

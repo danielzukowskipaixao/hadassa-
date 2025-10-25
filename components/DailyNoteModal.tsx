@@ -35,9 +35,7 @@ export function DailyNoteModal({ open, onClose, dayKey, onSaved }: {
     })
     setLoading(false)
     if (!res.ok) {
-      if (res.status === 401) setError('Você precisa estar logado e autorizado para salvar.')
-      else if (res.status === 403) setError('Dias futuros são bloqueados.')
-      else setError('Erro ao salvar. Tente novamente.')
+      setError('Erro ao salvar. Tente novamente.')
       return
     }
     onSaved?.()
