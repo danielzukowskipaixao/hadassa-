@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user") // "user" | "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photos    Photo[]
+  phrases   Phrase[]
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  url       String   // public URL do Supabase Storage
+  thumbUrl  String?  // thumbnail gerado
+  caption   String?
+  createdAt DateTime @default(now())
+  isPublic  Boolean  @default(true)
+}
+
+model Phrase {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  text      String
+  createdAt DateTime @default(now())
+  isPublic  Boolean  @default(true)
+}
+
+model DailyNote {
+  id        String   @id @default(cuid())
+  dayKey    String   @unique // YYYY-MM-DD na tz America/Sao_Paulo
+  title     String?  // opcional, ex.: "Dia 12"
+  content   String?  // recadinho do dia
+  isPublic  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

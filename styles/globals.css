@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --bg:#0f2b2b;
+}
+html, body{
+  height:100%;
+}
+body{
+  background: radial-gradient(1200px 800px at 10% -10%, #0b3a40 0%, var(--bg) 50%, #0a1f1f 100%);
+  color: theme(colors.foreground);
+}
+
+/***** Floral SVG background (subtle) *****/
+.bg-floral {
+  position: fixed; inset:0; pointer-events:none; z-index:-1; opacity:0.22;
+  background-image: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'>\
+    <defs>\
+      <radialGradient id='petalBlue' cx='50%' cy='50%' r='50%'>\
+        <stop offset='0%' stop-color='%23a6d4ff' stop-opacity='0.9'/>\
+        <stop offset='100%' stop-color='%230f2b2b' stop-opacity='0'/>\
+      </radialGradient>\
+      <radialGradient id='petalGreen' cx='50%' cy='50%' r='50%'>\
+        <stop offset='0%' stop-color='%239ad6d2' stop-opacity='0.9'/>\
+        <stop offset='100%' stop-color='%230f2b2b' stop-opacity='0'/>\
+      </radialGradient>\
+    </defs>\
+    <path d='M200 90 C190 60, 230 60, 220 90 C240 85, 255 120, 200 160 C145 120, 160 85, 180 90 Z' fill='%236fb0a7' fill-opacity='0.25'/>\
+    <circle cx='110' cy='120' r='80' fill='url(%23petalBlue)'/>\
+    <circle cx='290' cy='80' r='70' fill='url(%23petalGreen)'/>\
+    <path d='M80 280 C60 240, 130 230, 120 270 C160 260, 180 310, 120 340 C75 320, 90 300, 80 280 Z' fill='%23a6d4ff' fill-opacity='0.18'/>\
+    <circle cx='260' cy='300' r='90' fill='url(%23petalBlue)'/>\
+    <circle cx='340' cy='210' r='60' fill='url(%23petalGreen)'/>\
+  </svg>");
+  background-size: 500px 500px;
+  background-repeat: repeat;
+  filter: blur(1px) saturate(110%);
+}
+
+.glass { @apply bg-white/15 border border-white/30 backdrop-blur-xl rounded-2xl shadow-glass; }
+
+/* Focus styles */
+*:focus { outline: 2px solid #a6d4ff; outline-offset: 2px; }
