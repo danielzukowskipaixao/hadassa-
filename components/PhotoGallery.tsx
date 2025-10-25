@@ -61,7 +61,7 @@ export function PhotoGallery() {
         const { error: insertErr } = await supabase
           .from('Photo')
           .insert({ url: pub.publicUrl, thumbUrl: pub.publicUrl, isPublic: true, userId })
-        if (insertErr) console.warn('Falha ao salvar metadados da foto:', insertErr.message)
+        if (insertErr) { console.warn('Falha ao salvar metadados da foto:', insertErr.message); alert(`Erro ao salvar metadados da foto: ${insertErr.message}`) }
       } catch (err: any) {
         alert(err?.message || 'Configure o Supabase (.env.local) para enviar fotos.')
         break

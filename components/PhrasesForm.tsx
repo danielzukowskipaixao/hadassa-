@@ -37,7 +37,7 @@ export function PhrasesForm() {
       window.dispatchEvent(new CustomEvent('phrase:replace', { detail: { tempId: tmp.id, real: data } }))
     } catch (err: any) {
       window.dispatchEvent(new CustomEvent('phrase:revert', { detail: tmp.id }))
-      alert(err?.message || 'Erro ao salvar. Tente novamente.')
+      alert(err?.message || 'Erro ao salvar. Verifique as políticas RLS e o .env.local.')
     }
   }
 

@@ -18,27 +18,37 @@ export function DailyNoteModal({ open, onClose, dayKey, onSaved }: {
     if (!open) return
     setLoading(true)
     setError(null)
-    const supabase = createClientBrowser()
-    supabase
-      .from('DailyNote')
-      .select('*')
-      .eq('dayKey', dayKey)
-      .maybeSingle()
-      .then((res: any) => {
-        setContent(res?.data?.content ?? '')
-      })
-      .finally(() => setLoading(false))
+    try {
+      const supabase = createClientBrowser()
+      supabase
+        .from('DailyNote')
+        .select('*')
+        .eq('dayKey', dayKey)
+        .maybeSingle()
+        .then((res: any) => {
+          setContent(res?.data?.content ?? '')
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } catch {
+      setLoading(false)
+    }
   }, [open, dayKey])
 
   async function save() {
     setLoading(true)
     setError(null)
-    const supabase = createClientBrowser()
-    const { error } = await supabase
-      .from('DailyNote')
-      .upsert({ dayKey, content, isPublic: true })
+    try {
+      const supabase = createClientBrowser()
+      const { error } = await supabase
+        .from('DailyNote')
+        .upsert({ dayKey, content, isPublic: true })
+      if (error) { setError(`Erro ao salvar: ${error.message}`); return }
+    } catch (e: any) {
+      setError(e?.message || 'Erro ao salvar. Verifique o .env.local e as políticas RLS.')
+      return
+    }
     setLoading(false)
-    if (error) { setError('Erro ao salvar. Tente novamente.'); return }
     onSaved?.()
     onClose()
   }

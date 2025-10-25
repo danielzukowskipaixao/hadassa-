@@ -46,16 +46,21 @@ export function MonthlyCalendar() {
     if (autoOpenChecked) return
     setAutoOpenChecked(true)
     const dk = today
-    const supabase = createClientBrowser()
-    supabase
-      .from('DailyNote')
-      .select('title,content')
-      .eq('dayKey', dk)
-      .maybeSingle()
-      .then((res: any) => {
-        const data = res?.data as { title?: string | null; content?: string | null } | null
-        if (data && (data.title || data.content)) setSelectedDayKey(dk)
-      })
+    try {
+      const supabase = createClientBrowser()
+      supabase
+        .from('DailyNote')
+        .select('title,content')
+        .eq('dayKey', dk)
+        .maybeSingle()
+        .then((res: any) => {
+          const data = res?.data as { title?: string | null; content?: string | null } | null
+          if (data && (data.title || data.content)) setSelectedDayKey(dk)
+        })
+        .catch(() => {/* ignore */})
+    } catch {
+      // Supabase not configured — ignore silently
+    }
   }, [autoOpenChecked, today])
 
   return (
