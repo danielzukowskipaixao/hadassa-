@@ -50,7 +50,7 @@ npm start
 - Indicador de status de conexão no topo (verde online / cinza offline)
 - Fallback offline: alterações são enfileiradas e aplicadas após reconexão
 
-Bucket: `memorias-photos` (public). Tabelas: `daily_notes`, `goals`, `photos`. Canal lógico: `memorias-radassa`.
+Bucket: `memorias-photos` (public). Tabelas: `daily_notes`, `goals`, `photos`. Canal lógico: `memorias-hadassa`.
 
 — Feito com carinho ❤️
 

@@ -1,1 +1,1 @@
-export const CHANNEL = "memorias-radassa" as const;
+export const CHANNEL = "memorias-hadassa" as const;

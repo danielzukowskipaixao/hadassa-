@@ -23,7 +23,8 @@ export default function DayMessageDialog({
   const readOnly = !!dateISO && isPast(dateISO);
   const editableToday = !!dateISO && isToday(dateISO);
   const [text, setText] = useState("");
-  const [meta, setMeta] = useState<{ createdAt?: string; updatedAt?: string }>({});
+  // Meta exibida apenas no modo antigo; com Supabase, os timestamps são geridos no servidor
+  // Mantemos apenas o texto por simplicidade
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,9 +33,7 @@ export default function DayMessageDialog({
       if (!dateISO || !isOpen) return;
       const all = await fetchNotes();
       if (all[dateISO]) setText(all[dateISO]); else setText("");
-      try {
-        await flushNotesQueue();
-      } catch {}
+      try { await flushNotesQueue(); } catch {}
       unsub = subscribeNotes((dISO, t) => {
         if (dateISO && dISO === dateISO) setText(t);
       });
@@ -52,7 +51,7 @@ export default function DayMessageDialog({
       const draft: DayMessage = {
         dateISO,
         text: text.trim(),
-        createdAt: meta.createdAt || now,
+        createdAt: now,
         updatedAt: now,
       };
       DayMessageSchema.parse(draft);
@@ -102,10 +101,7 @@ export default function DayMessageDialog({
         )}
         <Separator className="my-2" />
         <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-          <div>
-            {meta.createdAt && <span>Criado: {new Date(meta.createdAt).toLocaleString("pt-BR")}</span>}
-            {meta.updatedAt && <span className="ml-3">Atualizado: {new Date(meta.updatedAt).toLocaleString("pt-BR")}</span>}
-          </div>
+          <div />
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Fechar

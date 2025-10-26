@@ -53,7 +53,7 @@ export default function GreetingHeader() {
         transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
       >
         <Heart className="w-8 h-8 text-pink-400" aria-hidden />
-        Memórias de Radassa e Daniel
+  Memórias de Hadassa e Daniel
       </motion.h1>
 
       <div className="bg-white/60 dark:bg-slate-900/50 backdrop-blur-md rounded-xl px-4 py-2 shadow-sm flex items-center gap-3">
@@ -63,7 +63,7 @@ export default function GreetingHeader() {
           className={`inline-block h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-slate-400"}`}
         />
         <p className={`${poppins.className} text-gray-700 dark:text-gray-100 text-base sm:text-lg leading-relaxed`}>
-          {greetingForHour(today)}, <span className="font-semibold text-pink-500">Radassa e Daniel</span> — {formatLongDatePtBR(today)}
+          {greetingForHour(today)}, <span className="font-semibold text-pink-500">Hadassa e Daniel</span> — {formatLongDatePtBR(today)}
         </p>
       </div>
 

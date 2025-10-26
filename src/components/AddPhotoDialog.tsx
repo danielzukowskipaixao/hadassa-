@@ -13,14 +13,7 @@ export default function AddPhotoDialog({ onCreated }: { onCreated: () => void })
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function fileToDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
+  // Note: conversion to data URL no longer needed when online; kept fallback handled by sync module
 
   async function handleSave() {
     if (!files || !files.length) return;

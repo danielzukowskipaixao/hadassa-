@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import getSupabase from "../supabase";
 import { CHANNEL } from "./channel";
 import type { PhotoItem as LocalPhoto } from "@/lib/photos";
