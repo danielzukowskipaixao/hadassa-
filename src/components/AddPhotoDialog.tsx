@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ImagePlus } from "lucide-react";
-import { uploadPhoto } from "@/lib/sync/photos";
+import { addPhoto } from "@/lib/photos";
 
 export default function AddPhotoDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
@@ -13,7 +13,14 @@ export default function AddPhotoDialog({ onCreated }: { onCreated: () => void })
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Note: conversion to data URL no longer needed when online; kept fallback handled by sync module
+  async function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   async function handleSave() {
     if (!files || !files.length) return;
@@ -24,7 +31,8 @@ export default function AddPhotoDialog({ onCreated }: { onCreated: () => void })
         // Skip very large files for now (optionally compress in future)
         continue;
       }
-      await uploadPhoto(f, desc.trim());
+      const dataUrl = await fileToDataUrl(f);
+      await addPhoto({ dataUrl, description: desc.trim() });
     }
     setBusy(false);
     setOpen(false);

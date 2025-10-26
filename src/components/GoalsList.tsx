@@ -5,31 +5,21 @@ import { Button } from "@/components/ui/button";
 import Checkbox from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 import type { Goal } from "@/lib/goals";
-import { fetchGoals as fetchGoalsSync, toggleGoal as toggleGoalSync, removeGoal as removeGoalSync, subscribeGoals } from "@/lib/sync/goals";
+import { getGoals, toggleGoal, removeGoal } from "@/lib/goals";
 
 export default function GoalsList({ category }: { category: Goal["category"] }) {
   const [goals, setGoals] = useState<Goal[]>([]);
 
   useEffect(() => {
-    let stop: (() => void) | null = null;
-    async function load() {
-      const all = await fetchGoalsSync();
-      setGoals(all.filter((g) => g.category === category));
-      stop = subscribeGoals(() => {
-        // On any change, refresh list for this category
-        fetchGoalsSync().then((arr) => setGoals(arr.filter((g) => g.category === category)));
-      });
-    }
-    load();
-    return () => { if (stop) stop(); };
+    setGoals(getGoals(category));
   }, [category]);
 
-  async function handleToggle(id: string) {
-    await toggleGoalSync(id, !(goals.find((g) => g.id === id)?.done));
+  function handleToggle(id: string) {
+    setGoals(toggleGoal(category, id));
   }
 
-  async function handleRemove(id: string) {
-    await removeGoalSync(id);
+  function handleRemove(id: string) {
+    setGoals(removeGoal(category, id));
   }
 
   return (

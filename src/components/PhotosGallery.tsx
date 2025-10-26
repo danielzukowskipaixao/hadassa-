@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, ImagePlus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AddPhotoDialog from "@/components/AddPhotoDialog";
 import type { PhotoItem } from "@/lib/photos";
-import { listPhotos, deletePhoto, subscribePhotos } from "@/lib/sync/photos";
+import { getAllPhotos, removePhoto } from "@/lib/photos";
 
 export default function PhotosGallery() {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -29,7 +29,7 @@ export default function PhotosGallery() {
   };
 
   const refresh = useCallback(async () => {
-    const data = await listPhotos();
+    const data = await getAllPhotos();
     setPhotos(data);
   }, []);
 
@@ -49,11 +49,6 @@ export default function PhotosGallery() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emblaApi, photos.length]);
-
-  useEffect(() => {
-    const unsub = subscribePhotos(() => refresh());
-    return () => { unsub(); };
-  }, [refresh]);
 
   const onPrev = () => emblaApi?.scrollPrev();
   const onNext = () => emblaApi?.scrollNext();
@@ -116,7 +111,7 @@ export default function PhotosGallery() {
                     className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 bg-white/85 rounded-full p-1.5 shadow transition"
                     onClick={async () => {
                       if (confirm("Remover esta foto?")) {
-                        await deletePhoto(p.id);
+                        await removePhoto(p.id);
                         await refresh();
                       }
                     }}

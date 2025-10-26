@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DayMessage, DayMessageSchema } from "@/lib/schema";
-import { fetchNotes, subscribeNotes, upsertNote, flushNotesQueue } from "@/lib/sync/notes";
+import { getMessage, saveMessage } from "@/lib/storage";
 import { formatLongDatePtBR, getToday, isPast, isToday } from "@/lib/date";
 import { z } from "zod";
 import { Separator } from "@/components/ui/separator";
@@ -23,25 +23,19 @@ export default function DayMessageDialog({
   const readOnly = !!dateISO && isPast(dateISO);
   const editableToday = !!dateISO && isToday(dateISO);
   const [text, setText] = useState("");
-  // Meta exibida apenas no modo antigo; com Supabase, os timestamps são geridos no servidor
-  // Mantemos apenas o texto por simplicidade
+  const [meta, setMeta] = useState<{ createdAt?: string; updatedAt?: string }>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let unsub: (() => void) | null = null;
-    async function load() {
-      if (!dateISO || !isOpen) return;
-      const all = await fetchNotes();
-      if (all[dateISO]) setText(all[dateISO]); else setText("");
-      try { await flushNotesQueue(); } catch {}
-      unsub = subscribeNotes((dISO, t) => {
-        if (dateISO && dISO === dateISO) setText(t);
-      });
+    if (!dateISO || !isOpen) return;
+    const existing = getMessage(dateISO);
+    if (existing) {
+      setText(existing.text);
+      setMeta({ createdAt: existing.createdAt, updatedAt: existing.updatedAt });
+    } else {
+      setText("");
+      setMeta({});
     }
-    load();
-    return () => {
-      if (unsub) unsub();
-    };
   }, [dateISO, isOpen]);
 
   function handleSave() {
@@ -51,12 +45,11 @@ export default function DayMessageDialog({
       const draft: DayMessage = {
         dateISO,
         text: text.trim(),
-        createdAt: now,
+        createdAt: meta.createdAt || now,
         updatedAt: now,
       };
       DayMessageSchema.parse(draft);
-      // Supabase upsert (with offline queue fallback inside)
-      upsertNote(dateISO, draft.text);
+      saveMessage(draft);
       onOpenChange(false);
       setError(null);
     } catch (e) {
@@ -101,7 +94,10 @@ export default function DayMessageDialog({
         )}
         <Separator className="my-2" />
         <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-          <div />
+          <div>
+            {meta.createdAt && <span>Criado: {new Date(meta.createdAt).toLocaleString("pt-BR")}</span>}
+            {meta.updatedAt && <span className="ml-3">Atualizado: {new Date(meta.updatedAt).toLocaleString("pt-BR")}</span>}
+          </div>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Fechar

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Goal } from "@/lib/goals";
-import { addGoal as addGoalSync } from "@/lib/sync/goals";
+import { addGoal } from "@/lib/goals";
 
 const schema = z.object({
   description: z.string().min(1, "Descreva o objetivo").max(200, "Máx. 200 caracteres"),
@@ -45,7 +45,7 @@ export default function AddGoalDialog({
       setBusy(false);
       return;
     }
-  await addGoalSync({ category, description: parsed.data.description, target: parsed.data.target || undefined, done: false });
+    addGoal(category, { description: parsed.data.description, target: parsed.data.target || undefined });
     onCreated?.();
     setBusy(false);
     onOpenChange(false);

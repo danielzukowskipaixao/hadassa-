@@ -19,7 +19,7 @@ if (isBrowser()) {
     localforage.config({
       name: "memorias",
       storeName: "v1_photos",
-  description: "Photos for Memórias de Hadassa e Daniel",
+      description: "Photos for Memórias de Radassa e Daniel",
     });
   } catch {
     // ignore
