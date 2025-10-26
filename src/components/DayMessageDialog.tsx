@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DayMessage, DayMessageSchema } from "@/lib/schema";
-import { getMessage, saveMessage } from "@/lib/storage";
+import { fetchNotes, subscribeNotes, upsertNote, flushNotesQueue } from "@/lib/sync/notes";
 import { formatLongDatePtBR, getToday, isPast, isToday } from "@/lib/date";
 import { z } from "zod";
 import { Separator } from "@/components/ui/separator";
@@ -27,15 +27,22 @@ export default function DayMessageDialog({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!dateISO || !isOpen) return;
-    const existing = getMessage(dateISO);
-    if (existing) {
-      setText(existing.text);
-      setMeta({ createdAt: existing.createdAt, updatedAt: existing.updatedAt });
-    } else {
-      setText("");
-      setMeta({});
+    let unsub: (() => void) | null = null;
+    async function load() {
+      if (!dateISO || !isOpen) return;
+      const all = await fetchNotes();
+      if (all[dateISO]) setText(all[dateISO]); else setText("");
+      try {
+        await flushNotesQueue();
+      } catch {}
+      unsub = subscribeNotes((dISO, t) => {
+        if (dateISO && dISO === dateISO) setText(t);
+      });
     }
+    load();
+    return () => {
+      if (unsub) unsub();
+    };
   }, [dateISO, isOpen]);
 
   function handleSave() {
@@ -49,7 +56,8 @@ export default function DayMessageDialog({
         updatedAt: now,
       };
       DayMessageSchema.parse(draft);
-      saveMessage(draft);
+      // Supabase upsert (with offline queue fallback inside)
+      upsertNote(dateISO, draft.text);
       onOpenChange(false);
       setError(null);
     } catch (e) {

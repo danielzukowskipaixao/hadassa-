@@ -7,6 +7,7 @@ import { exportAll, importAll } from "@/lib/storage";
 import { Upload, Download, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { Dancing_Script, Poppins } from "next/font/google";
+import { useRealtimeConnection } from "@/lib/sync/connection";
 
 const dancing = Dancing_Script({ subsets: ["latin"], weight: "700" });
 const poppins = Poppins({ subsets: ["latin"], weight: "500" });
@@ -14,6 +15,7 @@ const poppins = Poppins({ subsets: ["latin"], weight: "500" });
 export default function GreetingHeader() {
   const today = getToday();
   const fileRef = useRef<HTMLInputElement>(null);
+  const connected = useRealtimeConnection();
 
   function handleExport() {
     const json = exportAll();
@@ -54,7 +56,12 @@ export default function GreetingHeader() {
         Memórias de Radassa e Daniel
       </motion.h1>
 
-      <div className="bg-white/60 dark:bg-slate-900/50 backdrop-blur-md rounded-xl px-4 py-2 shadow-sm">
+      <div className="bg-white/60 dark:bg-slate-900/50 backdrop-blur-md rounded-xl px-4 py-2 shadow-sm flex items-center gap-3">
+        <span
+          title={connected ? "Conectado em tempo real" : "Offline / sem realtime"}
+          aria-label={connected ? "Conectado" : "Offline"}
+          className={`inline-block h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-slate-400"}`}
+        />
         <p className={`${poppins.className} text-gray-700 dark:text-gray-100 text-base sm:text-lg leading-relaxed`}>
           {greetingForHour(today)}, <span className="font-semibold text-pink-500">Radassa e Daniel</span> — {formatLongDatePtBR(today)}
         </p>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ImagePlus } from "lucide-react";
-import { addPhoto } from "@/lib/photos";
+import { uploadPhoto } from "@/lib/sync/photos";
 
 export default function AddPhotoDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
@@ -31,8 +31,7 @@ export default function AddPhotoDialog({ onCreated }: { onCreated: () => void })
         // Skip very large files for now (optionally compress in future)
         continue;
       }
-      const dataUrl = await fileToDataUrl(f);
-      await addPhoto({ dataUrl, description: desc.trim() });
+      await uploadPhoto(f, desc.trim());
     }
     setBusy(false);
     setOpen(false);
